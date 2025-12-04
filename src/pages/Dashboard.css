@@ -106,3 +106,18 @@
     display: block;
   }
   
+
+  @media (max-width: 600px) {
+    .dashboard-glass {
+      padding: 24px;
+    }
+  
+    .dashboard-title {
+      font-size: 24px;
+    }
+  
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
