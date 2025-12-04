@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Authors from './pages/Authors';
 import Books from './pages/Books';
 import Users from './pages/Users';
+import Borrow from './pages/Borrow';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Route path="/authors" element={<Authors />} />
       <Route path="/books" element={<Books />} />
       <Route path="/users" element={<Users />} />
+      <Route path="/borrow" element={<Borrow />} />
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
