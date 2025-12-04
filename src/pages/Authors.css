@@ -1,0 +1,59 @@
+.page-header {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  
+  .card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .form-row input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+  }
+  
+  .form-row button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .table th,
+  .table td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .action-btn {
+    margin-right: 8px;
+    background: none;
+    border: none;
+    color: #2563eb;
+    cursor: pointer;
+  }
+  
+  .delete-btn {
+    color: #ef4444;
+  }
+  
