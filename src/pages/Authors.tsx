@@ -34,7 +34,7 @@ export default function Authors() {
 
   return (
     <AppLayout>
-      <div className="page-header">Authors</div>
+      <h1 className="page-header">Authors</h1>
 
       <div className="card">
         <div className="form-row">
@@ -42,12 +42,17 @@ export default function Authors() {
             placeholder="Author name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && addAuthor()}
           />
-          <button onClick={addAuthor}>Add</button>
+          <button onClick={addAuthor} disabled={!name.trim()}>
+            Add Author
+          </button>
         </div>
 
         {loading ? (
-          <div>Loading...</div>
+          <div className="loading">Loading authors...</div>
+        ) : authors.length === 0 ? (
+          <div className="loading">No authors yet. Add one above.</div>
         ) : (
           <table className="table">
             <thead>
