@@ -1,36 +1,34 @@
 import { useEffect, useState } from "react";
-import api from "../api";
 import AppLayout from "../layout/AppLayout";
+import { useAuthors } from "../context/AuthorsContext";
 import "./Authors.css";
 
 export default function Authors() {
-  const [authors, setAuthors] = useState<any[]>([]);
+  const { authors, authorsLoading, fetchAuthors, addAuthor, deleteAuthor } = useAuthors();
   const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const fetchAuthors = async () => {
-    setLoading(true);
-    const res = await api.get("/authors");
-    setAuthors(res.data);
-    setLoading(false);
-  };
-
-  const addAuthor = async () => {
+  const handleAddAuthor = async () => {
     if (!name.trim()) return;
-    await api.post("/authors", { name });
-    setName("");
-    fetchAuthors();
+    try {
+      await addAuthor(name);
+      setName("");
+    } catch (error) {
+      alert("Failed to add author");
+    }
   };
 
-  const deleteAuthor = async (id: number) => {
+  const handleDeleteAuthor = async (id: number) => {
     if (!window.confirm("Delete this author?")) return;
-    await api.delete(`/authors/${id}`);
-    fetchAuthors();
+    try {
+      await deleteAuthor(id);
+    } catch (error) {
+      alert("Failed to delete author");
+    }
   };
 
   useEffect(() => {
     fetchAuthors();
-  }, []);
+  }, [fetchAuthors]);
 
   return (
     <AppLayout>
@@ -42,14 +40,14 @@ export default function Authors() {
             placeholder="Author name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && addAuthor()}
+            onKeyPress={(e) => e.key === 'Enter' && handleAddAuthor()}
           />
-          <button onClick={addAuthor} disabled={!name.trim()}>
+          <button onClick={handleAddAuthor} disabled={!name.trim()}>
             Add Author
           </button>
         </div>
 
-        {loading ? (
+        {authorsLoading ? (
           <div className="loading">Loading authors...</div>
         ) : authors.length === 0 ? (
           <div className="loading">No authors yet. Add one above.</div>
@@ -70,7 +68,7 @@ export default function Authors() {
                   <td>
                     <button
                       className="action-btn delete-btn"
-                      onClick={() => deleteAuthor(a.id)}
+                      onClick={() => handleDeleteAuthor(a.id)}
                     >
                       Delete
                     </button>

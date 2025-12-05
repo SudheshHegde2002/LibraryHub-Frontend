@@ -1,38 +1,36 @@
 import { useEffect, useState } from 'react';
-import api from '../api';
 import AppLayout from '../layout/AppLayout';
+import { useUsers } from '../context/UsersContext';
 import './Users.css';
 
 export default function Users() {
-  const [users, setUsers] = useState<any[]>([]);
+  const { users, usersLoading, fetchUsers, addUser, deleteUser } = useUsers();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    const res = await api.get('/users');
-    setUsers(res.data);
-    setLoading(false);
-  };
-
-  const addUser = async () => {
+  const handleAddUser = async () => {
     if (!name.trim() || !email.trim()) return;
-    await api.post('/users', { name, email });
-    setName('');
-    setEmail('');
-    fetchUsers();
+    try {
+      await addUser(name, email);
+      setName('');
+      setEmail('');
+    } catch (error) {
+      alert('Failed to add user');
+    }
   };
 
-  const deleteUser = async (id: number) => {
+  const handleDeleteUser = async (id: number) => {
     if (!window.confirm('Delete this user?')) return;
-    await api.delete(`/users/${id}`);
-    fetchUsers();
+    try {
+      await deleteUser(id);
+    } catch (error) {
+      alert('Failed to delete user');
+    }
   };
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   return (
     <AppLayout>
@@ -53,11 +51,11 @@ export default function Users() {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addUser()}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddUser()}
             />
             <button 
               className="primary-btn" 
-              onClick={addUser}
+              onClick={handleAddUser}
               disabled={!name.trim() || !email.trim()}
             >
               Add User
@@ -66,7 +64,7 @@ export default function Users() {
         </div>
 
         <div className="table-container">
-          {loading ? (
+          {usersLoading ? (
             <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
               Loading users...
             </div>
@@ -93,7 +91,7 @@ export default function Users() {
                     <td>
                       <button 
                         className="danger-btn" 
-                        onClick={() => deleteUser(u.id)}
+                        onClick={() => handleDeleteUser(u.id)}
                       >
                         Delete
                       </button>

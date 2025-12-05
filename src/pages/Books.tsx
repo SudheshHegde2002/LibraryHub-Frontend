@@ -1,50 +1,40 @@
 import { useEffect, useState } from 'react';
-import api from '../api';
 import AppLayout from '../layout/AppLayout';
+import { useAuthors } from '../context/AuthorsContext';
+import { useBooks } from '../context/BooksContext';
 import './Books.css';
 
 export default function Books() {
-  const [books, setBooks] = useState<any[]>([]);
-  const [authors, setAuthors] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { books, booksLoading, fetchBooks, addBook, deleteBook } = useBooks();
+  const { authors, fetchAuthors } = useAuthors();
 
   const [title, setTitle] = useState('');
   const [authorId, setAuthorId] = useState('');
 
-  const fetchBooks = async () => {
-    setLoading(true);
-    const res = await api.get('/books');
-    setBooks(res.data);
-    setLoading(false);
-  };
-
-  const fetchAuthors = async () => {
-    const res = await api.get('/authors');
-    setAuthors(res.data);
-  };
-
-  const addBook = async () => {
+  const handleAddBook = async () => {
     if (!title.trim() || !authorId) return;
-    await api.post('/books', {
-      title,
-      author_id: Number(authorId),
-    });
-
-    setTitle('');
-    setAuthorId('');
-    fetchBooks();
+    try {
+      await addBook(title, Number(authorId));
+      setTitle('');
+      setAuthorId('');
+    } catch (error) {
+      alert('Failed to add book');
+    }
   };
 
-  const deleteBook = async (id: number) => {
+  const handleDeleteBook = async (id: number) => {
     if (!window.confirm('Delete this book?')) return;
-    await api.delete(`/books/${id}`);
-    fetchBooks();
+    try {
+      await deleteBook(id);
+    } catch (error) {
+      alert('Failed to delete book');
+    }
   };
 
   useEffect(() => {
     fetchBooks();
     fetchAuthors();
-  }, []);
+  }, [fetchBooks, fetchAuthors]);
 
   return (
     <AppLayout>
@@ -58,7 +48,7 @@ export default function Books() {
               placeholder="Book title"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addBook()}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddBook()}
             />
 
             <select
@@ -76,7 +66,7 @@ export default function Books() {
 
             <button 
               className="primary-btn" 
-              onClick={addBook}
+              onClick={handleAddBook}
               disabled={!title.trim() || !authorId}
             >
               Add Book
@@ -85,7 +75,7 @@ export default function Books() {
         </div>
 
         <div className="table-container">
-          {loading ? (
+          {booksLoading ? (
             <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
               Loading books...
             </div>
@@ -116,7 +106,7 @@ export default function Books() {
                     <td>
                       <button 
                         className="danger-btn" 
-                        onClick={() => deleteBook(b.id)}
+                        onClick={() => handleDeleteBook(b.id)}
                       >
                         Delete
                       </button>

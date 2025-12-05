@@ -1,65 +1,86 @@
-import { useEffect, useState } from 'react';
-import api from '../api';
+import { useEffect, useState, useMemo } from 'react';
 import AppLayout from '../layout/AppLayout';
+import { useUsers } from '../context/UsersContext';
+import { useBooks } from '../context/BooksContext';
+import { useAuthors } from '../context/AuthorsContext';
+import { useBorrow } from '../context/BorrowContext';
 import './Borrow.css';
 
 export default function Borrow() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [books, setBooks] = useState<any[]>([]);
-  const [borrowed, setBorrowed] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { users, fetchUsers } = useUsers();
+  const { books, fetchBooks, updateBookBorrowStatus } = useBooks();
+  const { authors, fetchAuthors } = useAuthors();
+  const { borrowedBooks, borrowedLoading, fetchBorrowedBooks, borrowBook, returnBook } = useBorrow();
 
   const [userId, setUserId] = useState('');
   const [bookId, setBookId] = useState('');
 
-  const fetchUsers = async () => {
-    const res = await api.get('/users');
-    setUsers(res.data);
+  // Helper to get author name by ID
+  const getAuthorName = (authorId: number | string) => {
+    if (!authorId) return 'Unknown';
+    
+    // Try both string and number comparison
+    const author = authors.find(a => 
+      a.id === Number(authorId) || a.id.toString() === authorId.toString()
+    );
+    
+    // Debug logging
+    console.log('Looking for author:', authorId, 'Found:', author, 'All authors:', authors);
+    
+    return author?.name || 'Unknown';
   };
 
-  const fetchBooks = async () => {
-    const res = await api.get('/books');
-    setBooks(res.data.filter((b: any) => !b.is_borrowed));
-  };
+  // Filter available books (not borrowed)
+  const availableBooks = useMemo(() => 
+    books.filter(b => !b.is_borrowed), 
+    [books]
+  );
 
-  const fetchBorrowed = async (uid: string) => {
-    if (!uid) {
-      setBorrowed([]);
-      return;
-    }
-    setLoading(true);
-    const res = await api.get(`/borrow/user/${uid}`);
-    setBorrowed(res.data);
-    setLoading(false);
-  };
+  // Get borrowed books for selected user
+  const userBorrowedBooks = useMemo(() => 
+    userId ? (borrowedBooks[Number(userId)] || []) : [],
+    [userId, borrowedBooks]
+  );
 
-  const borrowBook = async () => {
+  // Debug: Log authors when they change
+  useEffect(() => {
+    console.log('Authors loaded:', authors.length, authors);
+  }, [authors]);
+
+  const handleBorrowBook = async () => {
     if (!userId || !bookId) return;
-    await api.post('/borrow', {
-      user_id: Number(userId),
-      book_id: Number(bookId),
-    });
-
-    setBookId('');
-    fetchBooks();
-    fetchBorrowed(userId);
+    try {
+      await borrowBook(Number(userId), Number(bookId), () => {
+        updateBookBorrowStatus(Number(bookId), true);
+      });
+      setBookId('');
+    } catch (error) {
+      alert('Failed to borrow book');
+    }
   };
 
-  const returnBook = async (bookId: number) => {
+  const handleReturnBook = async (bookId: number) => {
     if (!window.confirm('Return this book?')) return;
-    await api.post(`/borrow/return/${bookId}`);
-    fetchBooks();
-    fetchBorrowed(userId);
+    try {
+      await returnBook(bookId, Number(userId), () => {
+        updateBookBorrowStatus(bookId, false);
+      });
+    } catch (error) {
+      alert('Failed to return book');
+    }
   };
 
   useEffect(() => {
     fetchUsers();
     fetchBooks();
-  }, []);
+    fetchAuthors();
+  }, [fetchUsers, fetchBooks, fetchAuthors]);
 
   useEffect(() => {
-    fetchBorrowed(userId);
-  }, [userId]);
+    if (userId) {
+      fetchBorrowedBooks(Number(userId));
+    }
+  }, [userId, fetchBorrowedBooks]);
 
   return (
     <AppLayout>
@@ -88,16 +109,16 @@ export default function Borrow() {
               disabled={!userId}
             >
               <option value="">Select Book</option>
-              {books.map(b => (
+              {availableBooks.map(b => (
                 <option key={b.id} value={b.id}>
-                  {b.title}
+                  {b.title} - {getAuthorName(b.author_id)}
                 </option>
               ))}
             </select>
 
             <button 
               className="primary-btn" 
-              onClick={borrowBook}
+              onClick={handleBorrowBook}
               disabled={!userId || !bookId}
             >
               Borrow Book
@@ -107,7 +128,7 @@ export default function Borrow() {
 
         <div className="table-container">
           <h2 className="section-title">
-            {userId ? `Borrowed Books (${borrowed.length})` : 'Borrowed Books'}
+            {userId ? `Borrowed Books (${userBorrowedBooks.length})` : 'Borrowed Books'}
           </h2>
 
           {!userId ? (
@@ -116,11 +137,11 @@ export default function Borrow() {
                 Please select a user to view their borrowed books.
               </p>
             </div>
-          ) : loading ? (
+          ) : borrowedLoading ? (
             <div className="empty-state-container">
               <p className="empty-state">Loading borrowed books...</p>
             </div>
-          ) : borrowed.length === 0 ? (
+          ) : userBorrowedBooks.length === 0 ? (
             <div className="empty-state-container">
               <p className="empty-state">
                 This user hasn't borrowed any books yet.
@@ -137,15 +158,15 @@ export default function Borrow() {
                 </tr>
               </thead>
               <tbody>
-                {borrowed.map(b => (
+                {userBorrowedBooks.map(b => (
                   <tr key={b.id}>
                     <td>{b.Books?.title || 'Unknown'}</td>
-                    <td>{b.Books?.Authors?.name || 'Unknown'}</td>
+                    <td>{b.Books?.author_id ? getAuthorName(b.Books.author_id) : 'Unknown'}</td>
                     <td>{new Date(b.borrow_date).toLocaleDateString()}</td>
                     <td>
                       <button 
                         className="primary-btn return-btn" 
-                        onClick={() => returnBook(b.book_id)}
+                        onClick={() => handleReturnBook(b.book_id)}
                       >
                         Return
                       </button>

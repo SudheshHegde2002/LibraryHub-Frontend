@@ -1,0 +1,84 @@
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import api from '../api';
+import { Author } from './AuthorsContext';
+
+export interface Book {
+  id: number;
+  title: string;
+  author_id: number;
+  is_borrowed: boolean;
+  Authors?: Author;
+}
+
+interface BooksContextType {
+  books: Book[];
+  booksLoading: boolean;
+  fetchBooks: () => Promise<void>;
+  addBook: (title: string, authorId: number) => Promise<void>;
+  deleteBook: (id: number) => Promise<void>;
+  updateBookBorrowStatus: (bookId: number, isBorrowed: boolean) => void;
+}
+
+const BooksContext = createContext<BooksContextType | undefined>(undefined);
+
+export const BooksProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [books, setBooks] = useState<Book[]>([]);
+  const [booksLoading, setBooksLoading] = useState(false);
+  const [booksLoaded, setBooksLoaded] = useState(false);
+
+  const fetchBooks = useCallback(async () => {
+    if (booksLoaded) return;
+    
+    setBooksLoading(true);
+    try {
+      const res = await api.get('/books');
+      setBooks(res.data);
+      setBooksLoaded(true);
+    } catch (error) {
+      console.error('Failed to fetch books:', error);
+      throw error;
+    } finally {
+      setBooksLoading(false);
+    }
+  }, [booksLoaded]);
+
+  const addBook = useCallback(async (title: string, authorId: number) => {
+    const res = await api.post('/books', { title, author_id: authorId });
+    setBooks(prev => [...prev, res.data]);
+    // Refetch to get author info populated
+    const updated = await api.get('/books');
+    setBooks(updated.data);
+  }, []);
+
+  const deleteBook = useCallback(async (id: number) => {
+    await api.delete(`/books/${id}`);
+    setBooks(prev => prev.filter(b => b.id !== id));
+  }, []);
+
+  // Helper to update book borrow status (used by BorrowContext)
+  const updateBookBorrowStatus = useCallback((bookId: number, isBorrowed: boolean) => {
+    setBooks(prev => prev.map(b => 
+      b.id === bookId ? { ...b, is_borrowed: isBorrowed } : b
+    ));
+  }, []);
+
+  const value: BooksContextType = {
+    books,
+    booksLoading,
+    fetchBooks,
+    addBook,
+    deleteBook,
+    updateBookBorrowStatus,
+  };
+
+  return <BooksContext.Provider value={value}>{children}</BooksContext.Provider>;
+};
+
+export const useBooks = () => {
+  const context = useContext(BooksContext);
+  if (context === undefined) {
+    throw new Error('useBooks must be used within a BooksProvider');
+  }
+  return context;
+};
+
