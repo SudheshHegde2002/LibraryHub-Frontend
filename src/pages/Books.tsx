@@ -144,44 +144,46 @@ export default function Books() {
           </div>
         </div>
 
-        <div className="card" style={{ marginTop: '20px' }}>
-          <h3 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: 600 }}>Filters</h3>
-          <div className="form-row">
-            <select
-              className="select"
-              value={filterAuthorId}
-              onChange={e => setFilterAuthorId(e.target.value)}
-            >
-              <option value="">All Authors</option>
-              {authors.map(a => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
+        {books.length > 0 && (
+          <div className="card" style={{ marginTop: '20px' }}>
+            <h3 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: 600 }}>Filters</h3>
+            <div className="form-row">
+              <select
+                className="select"
+                value={filterAuthorId}
+                onChange={e => setFilterAuthorId(e.target.value)}
+              >
+                <option value="">All Authors</option>
+                {authors.map(a => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
 
-            <select
-              className="select"
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value as 'all' | 'available' | 'borrowed')}
-            >
-              <option value="all">All Status</option>
-              <option value="available">Available</option>
-              <option value="borrowed">Borrowed</option>
-            </select>
+              <select
+                className="select"
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value as 'all' | 'available' | 'borrowed')}
+              >
+                <option value="all">All Status</option>
+                <option value="available">Available</option>
+                <option value="borrowed">Borrowed</option>
+              </select>
 
-            <button
-              className="primary-btn"
-              onClick={() => {
-                setFilterAuthorId('');
-                setFilterStatus('all');
-              }}
-              style={{ backgroundColor: '#6c757d' }}
-            >
-              Clear Filters
-            </button>
+              <button
+                className="primary-btn"
+                onClick={() => {
+                  setFilterAuthorId('');
+                  setFilterStatus('all');
+                }}
+                style={{ backgroundColor: '#6c757d' }}
+              >
+                Clear Filters
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="table-container">
           {booksLoading ? (

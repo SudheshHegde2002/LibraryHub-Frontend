@@ -4,7 +4,7 @@ import { useUsers } from '../context/UsersContext';
 import './Users.css';
 
 export default function Users() {
-  const { users, usersLoading, fetchUsers, addUser, deleteUser } = useUsers();
+  const { users, usersLoading, fetchUsers, addUser } = useUsers();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
 
@@ -17,16 +17,6 @@ export default function Users() {
       window.dispatchEvent(new CustomEvent('usersChanged'));
     } catch (error) {
       alert('Failed to add user');
-    }
-  };
-
-  const handleDeleteUser = async (id: number) => {
-    if (!window.confirm('Delete this user?')) return;
-    try {
-      await deleteUser(id);
-      window.dispatchEvent(new CustomEvent('usersChanged'));
-    } catch (error) {
-      alert('Failed to delete user');
     }
   };
 
@@ -81,7 +71,7 @@ export default function Users() {
                   <th>ID</th>
                   <th>Name</th>
                   <th>Email</th>
-                  <th>Actions</th>
+
                 </tr>
               </thead>
               <tbody>
@@ -90,14 +80,6 @@ export default function Users() {
                     <td>{u.id}</td>
                     <td>{u.name}</td>
                     <td>{u.email}</td>
-                    <td>
-                      <button 
-                        className="danger-btn" 
-                        onClick={() => handleDeleteUser(u.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>

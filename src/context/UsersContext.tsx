@@ -12,7 +12,6 @@ interface UsersContextType {
   usersLoading: boolean;
   fetchUsers: () => Promise<void>;
   addUser: (name: string, email: string) => Promise<void>;
-  deleteUser: (id: number) => Promise<void>;
   refreshUsers: () => Promise<void>;
 }
 
@@ -44,11 +43,6 @@ export const UsersProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setUsers(prev => [...prev, res.data]);
   }, []);
 
-  const deleteUser = useCallback(async (id: number) => {
-    await api.delete(`/users/${id}`);
-    setUsers(prev => prev.filter(u => u.id !== id));
-  }, []);
-
   const refreshUsers = useCallback(async () => {
     setUsersLoading(true);
     try {
@@ -68,7 +62,6 @@ export const UsersProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     usersLoading,
     fetchUsers,
     addUser,
-    deleteUser,
     refreshUsers,
   };
 
