@@ -4,8 +4,10 @@ import { useAuthors } from "../context/AuthorsContext";
 import "./Authors.css";
 
 export default function Authors() {
-  const { authors, authorsLoading, fetchAuthors, addAuthor, deleteAuthor } = useAuthors();
+  const { authors, authorsLoading, fetchAuthors, addAuthor, updateAuthor, deleteAuthor } = useAuthors();
   const [name, setName] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const handleAddAuthor = async () => {
     if (!name.trim()) return;
@@ -16,6 +18,28 @@ export default function Authors() {
     } catch (error) {
       alert("Failed to add author");
     }
+  };
+
+  const handleEditAuthor = (id: number, currentName: string) => {
+    setEditingId(id);
+    setEditingName(currentName);
+  };
+
+  const handleSaveAuthor = async (id: number) => {
+    if (!editingName.trim()) return;
+    try {
+      await updateAuthor(id, editingName);
+      setEditingId(null);
+      setEditingName("");
+      window.dispatchEvent(new CustomEvent('authorsChanged'));
+    } catch (error) {
+      alert("Failed to update author");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingName("");
   };
 
   const handleDeleteAuthor = async (id: number) => {
@@ -68,14 +92,53 @@ export default function Authors() {
               {authors.map((a) => (
                 <tr key={a.id}>
                   <td>{a.id}</td>
-                  <td>{a.name}</td>
                   <td>
-                    <button
-                      className="action-btn delete-btn"
-                      onClick={() => handleDeleteAuthor(a.id)}
-                    >
-                      Delete
-                    </button>
+                    {editingId === a.id ? (
+                      <input
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSaveAuthor(a.id)}
+                        autoFocus
+                      />
+                    ) : (
+                      a.name
+                    )}
+                  </td>
+                  <td>
+                    {editingId === a.id ? (
+                      <>
+                        <button
+                          className="action-btn"
+                          onClick={() => handleSaveAuthor(a.id)}
+                          disabled={!editingName.trim()}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="action-btn"
+                          onClick={handleCancelEdit}
+                          style={{ marginLeft: '8px' }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          className="action-btn"
+                          onClick={() => handleEditAuthor(a.id, a.name)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="action-btn delete-btn"
+                          onClick={() => handleDeleteAuthor(a.id)}
+                          style={{ marginLeft: '8px' }}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

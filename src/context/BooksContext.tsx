@@ -15,6 +15,7 @@ interface BooksContextType {
   booksLoading: boolean;
   fetchBooks: () => Promise<void>;
   addBook: (title: string, authorId: number) => Promise<void>;
+  updateBook: (id: number, title: string, authorId: number) => Promise<void>;
   deleteBook: (id: number) => Promise<void>;
   updateBookBorrowStatus: (bookId: number, isBorrowed: boolean) => void;
   refreshBooks: () => Promise<void>;
@@ -46,7 +47,12 @@ export const BooksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const addBook = useCallback(async (title: string, authorId: number) => {
     const res = await api.post('/books', { title, author_id: authorId });
     setBooks(prev => [...prev, res.data]);
-    // Refetch to get author info populated
+    const updated = await api.get('/books');
+    setBooks(updated.data);
+  }, []);
+
+  const updateBook = useCallback(async (id: number, title: string, authorId: number) => {
+    await api.put(`/books/${id}`, { title, author_id: authorId });
     const updated = await api.get('/books');
     setBooks(updated.data);
   }, []);
@@ -56,7 +62,6 @@ export const BooksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setBooks(prev => prev.filter(b => b.id !== id));
   }, []);
 
-  // Helper to update book borrow status (used by BorrowContext)
   const updateBookBorrowStatus = useCallback((bookId: number, isBorrowed: boolean) => {
     setBooks(prev => prev.map(b => 
       b.id === bookId ? { ...b, is_borrowed: isBorrowed } : b
@@ -77,7 +82,6 @@ export const BooksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, []);
 
-  // Listen for author changes and refresh books to update author names
   useEffect(() => {
     const handleAuthorsChanged = () => {
       if (booksLoaded) {
@@ -94,6 +98,7 @@ export const BooksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     booksLoading,
     fetchBooks,
     addBook,
+    updateBook,
     deleteBook,
     updateBookBorrowStatus,
     refreshBooks,

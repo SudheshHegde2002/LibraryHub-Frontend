@@ -50,31 +50,26 @@ export const BorrowProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const borrowBook = useCallback(async (userId: number, bookId: number, onSuccess?: () => void) => {
     await api.post('/borrow', { user_id: userId, book_id: bookId });
     
-    // Invalidate borrowed books cache for this user
     setBorrowedBooks(prev => {
       const updated = { ...prev };
       delete updated[userId];
       return updated;
     });
     
-    // Refetch borrowed books
     const res = await api.get(`/borrow/user/${userId}`);
     setBorrowedBooks(prev => ({ ...prev, [userId]: res.data }));
     
-    // Callback to update books context
     if (onSuccess) onSuccess();
   }, []);
 
   const returnBook = useCallback(async (bookId: number, userId: number, onSuccess?: () => void) => {
     await api.post(`/borrow/return/${bookId}`);
     
-    // Update borrowed books for this user
     setBorrowedBooks(prev => ({
       ...prev,
       [userId]: prev[userId]?.filter(b => b.book_id !== bookId) || []
     }));
     
-    // Callback to update books context
     if (onSuccess) onSuccess();
   }, []);
 

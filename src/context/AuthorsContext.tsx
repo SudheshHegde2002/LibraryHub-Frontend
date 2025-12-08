@@ -11,6 +11,7 @@ interface AuthorsContextType {
   authorsLoading: boolean;
   fetchAuthors: () => Promise<void>;
   addAuthor: (name: string) => Promise<void>;
+  updateAuthor: (id: number, name: string) => Promise<void>;
   deleteAuthor: (id: number) => Promise<void>;
   refreshAuthors: () => Promise<void>;
 }
@@ -23,7 +24,6 @@ export const AuthorsProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [authorsLoaded, setAuthorsLoaded] = useState(false);
 
   const fetchAuthors = useCallback(async () => {
-    // Only skip if already loaded (regardless of length - might be legitimately empty)
     if (authorsLoaded) return;
     
     setAuthorsLoading(true);
@@ -42,6 +42,11 @@ export const AuthorsProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addAuthor = useCallback(async (name: string) => {
     const res = await api.post('/authors', { name });
     setAuthors(prev => [...prev, res.data]);
+  }, []);
+
+  const updateAuthor = useCallback(async (id: number, name: string) => {
+    const res = await api.put(`/authors/${id}`, { name });
+    setAuthors(prev => prev.map(a => a.id === id ? res.data : a));
   }, []);
 
   const deleteAuthor = useCallback(async (id: number) => {
@@ -68,6 +73,7 @@ export const AuthorsProvider: React.FC<{ children: ReactNode }> = ({ children })
     authorsLoading,
     fetchAuthors,
     addAuthor,
+    updateAuthor,
     deleteAuthor,
     refreshAuthors,
   };
