@@ -89,8 +89,18 @@ export const BooksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
     };
 
+    const handleBooksChanged = () => {
+      if (booksLoaded) {
+        refreshBooks();
+      }
+    };
+
     window.addEventListener('authorsChanged', handleAuthorsChanged);
-    return () => window.removeEventListener('authorsChanged', handleAuthorsChanged);
+    window.addEventListener('booksChanged', handleBooksChanged);
+    return () => {
+      window.removeEventListener('authorsChanged', handleAuthorsChanged);
+      window.removeEventListener('booksChanged', handleBooksChanged);
+    };
   }, [booksLoaded, refreshBooks]);
 
   const value: BooksContextType = {

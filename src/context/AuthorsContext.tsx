@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import api from '../api';
 
 export interface Author {
@@ -46,12 +46,23 @@ export const AuthorsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const updateAuthor = useCallback(async (id: number, name: string) => {
     const res = await api.put(`/authors/${id}`, { name });
-    setAuthors(prev => prev.map(a => a.id === id ? res.data : a));
+    console.log('Update Author Response:', res.data);
+    console.log('Looking for ID:', id, 'Type:', typeof id);
+    setAuthors(prev => {
+      console.log('Current authors:', prev);
+      const updated = prev.map(a => {
+        const matches = a.id.toString() === id.toString();
+        console.log(`Comparing ${a.id} (${typeof a.id}) with ${id} (${typeof id}): ${matches}`);
+        return matches ? res.data : a;
+      });
+      console.log('Updated authors array:', updated);
+      return updated;
+    });
   }, []);
 
   const deleteAuthor = useCallback(async (id: number) => {
     await api.delete(`/authors/${id}`);
-    setAuthors(prev => prev.filter(a => a.id !== id));
+    setAuthors(prev => prev.filter(a => a.id.toString() !== id.toString()));
   }, []);
 
   const refreshAuthors = useCallback(async () => {
@@ -67,6 +78,8 @@ export const AuthorsProvider: React.FC<{ children: ReactNode }> = ({ children })
       setAuthorsLoading(false);
     }
   }, []);
+
+  
 
   const value: AuthorsContextType = {
     authors,
