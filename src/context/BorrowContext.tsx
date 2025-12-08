@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import api from '../api';
 
 interface BorrowedBookInfo {
@@ -24,6 +24,7 @@ interface BorrowContextType {
   borrowBook: (userId: number, bookId: number, onSuccess?: () => void) => Promise<void>;
   returnBook: (bookId: number, userId: number, onSuccess?: () => void) => Promise<void>;
   refreshBorrowedBooks: (userId: number) => Promise<void>;
+  invalidateCache: () => void;
 }
 
 const BorrowContext = createContext<BorrowContextType | undefined>(undefined);
@@ -35,6 +36,7 @@ export const BorrowProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const fetchBorrowedBooks = useCallback(async (userId: number) => {
     if (borrowedBooks[userId]) return;
     
+    console.log('Fetching borrowed books for user:', userId);
     setBorrowedLoading(true);
     try {
       const res = await api.get(`/borrow/user/${userId}`);
@@ -86,6 +88,27 @@ export const BorrowProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, []);
 
+  const invalidateCache = useCallback(() => {
+    setBorrowedBooks({});
+  }, []);
+
+  useEffect(() => {
+    const handleBooksChanged = () => {
+      invalidateCache();
+    };
+    const handleAuthorsChanged = () => {
+      invalidateCache();
+    };
+
+    window.addEventListener('booksChanged', handleBooksChanged);
+    window.addEventListener('authorsChanged', handleAuthorsChanged);
+
+    return () => {
+      window.removeEventListener('booksChanged', handleBooksChanged);
+      window.removeEventListener('authorsChanged', handleAuthorsChanged);
+    };
+  }, [invalidateCache]);
+
   const value: BorrowContextType = {
     borrowedBooks,
     borrowedLoading,
@@ -93,6 +116,7 @@ export const BorrowProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     borrowBook,
     returnBook,
     refreshBorrowedBooks,
+    invalidateCache,
   };
 
   return <BorrowContext.Provider value={value}>{children}</BorrowContext.Provider>;

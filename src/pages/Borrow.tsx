@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import AppLayout from '../layout/AppLayout';
 import { useUsers } from '../context/UsersContext';
 import { useBooks } from '../context/BooksContext';
@@ -14,17 +14,19 @@ export default function Borrow() {
 
   const [userId, setUserId] = useState('');
   const [bookId, setBookId] = useState('');
+  
+  const userIdRef = useRef(userId);
+  
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
 
   const getAuthorName = (authorId: number | string) => {
     if (!authorId) return 'Unknown';
     
-
     const author = authors.find(a => 
       a.id === Number(authorId) || a.id.toString() === authorId.toString()
     );
-    
-
-    console.log('Looking for author:', authorId, 'Found:', author, 'All authors:', authors);
     
     return author?.name || 'Unknown';
   };
@@ -40,10 +42,6 @@ export default function Borrow() {
     [userId, borrowedBooks]
   );
 
-
-  useEffect(() => {
-    console.log('Authors loaded:', authors.length, authors);
-  }, [authors]);
 
   const handleBorrowBook = async () => {
     if (!userId || !bookId) return;
@@ -85,14 +83,14 @@ export default function Borrow() {
   useEffect(() => {
     const handleBooksChanged = () => {
       refreshBooks();
-      if (userId) {
-        refreshBorrowedBooks(Number(userId));
+      if (userIdRef.current) {
+        refreshBorrowedBooks(Number(userIdRef.current));
       }
     };
     const handleAuthorsChanged = () => {
       refreshAuthors();
-      if (userId) {
-        refreshBorrowedBooks(Number(userId));
+      if (userIdRef.current) {
+        refreshBorrowedBooks(Number(userIdRef.current));
       }
     };
     const handleUsersChanged = () => refreshUsers();
@@ -106,7 +104,7 @@ export default function Borrow() {
       window.removeEventListener('authorsChanged', handleAuthorsChanged);
       window.removeEventListener('usersChanged', handleUsersChanged);
     };
-  }, [refreshBooks, refreshAuthors, refreshUsers, refreshBorrowedBooks, userId]);
+  }, [refreshBooks, refreshAuthors, refreshUsers, refreshBorrowedBooks]);
 
   return (
     <AppLayout>
