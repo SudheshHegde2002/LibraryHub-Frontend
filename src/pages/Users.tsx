@@ -14,6 +14,7 @@ export default function Users() {
       await addUser(name, email);
       setName('');
       setEmail('');
+      window.dispatchEvent(new CustomEvent('usersChanged'));
     } catch (error) {
       alert('Failed to add user');
     }
@@ -23,6 +24,7 @@ export default function Users() {
     if (!window.confirm('Delete this user?')) return;
     try {
       await deleteUser(id);
+      window.dispatchEvent(new CustomEvent('usersChanged'));
     } catch (error) {
       alert('Failed to delete user');
     }

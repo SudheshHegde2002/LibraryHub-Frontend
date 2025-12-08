@@ -13,6 +13,7 @@ interface UsersContextType {
   fetchUsers: () => Promise<void>;
   addUser: (name: string, email: string) => Promise<void>;
   deleteUser: (id: number) => Promise<void>;
+  refreshUsers: () => Promise<void>;
 }
 
 const UsersContext = createContext<UsersContextType | undefined>(undefined);
@@ -48,12 +49,27 @@ export const UsersProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setUsers(prev => prev.filter(u => u.id !== id));
   }, []);
 
+  const refreshUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const res = await api.get('/users');
+      setUsers(res.data);
+      setUsersLoaded(true);
+    } catch (error) {
+      console.error('Failed to refresh users:', error);
+      throw error;
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
   const value: UsersContextType = {
     users,
     usersLoading,
     fetchUsers,
     addUser,
     deleteUser,
+    refreshUsers,
   };
 
   return <UsersContext.Provider value={value}>{children}</UsersContext.Provider>;

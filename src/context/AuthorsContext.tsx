@@ -12,6 +12,7 @@ interface AuthorsContextType {
   fetchAuthors: () => Promise<void>;
   addAuthor: (name: string) => Promise<void>;
   deleteAuthor: (id: number) => Promise<void>;
+  refreshAuthors: () => Promise<void>;
 }
 
 const AuthorsContext = createContext<AuthorsContextType | undefined>(undefined);
@@ -48,12 +49,27 @@ export const AuthorsProvider: React.FC<{ children: ReactNode }> = ({ children })
     setAuthors(prev => prev.filter(a => a.id !== id));
   }, []);
 
+  const refreshAuthors = useCallback(async () => {
+    setAuthorsLoading(true);
+    try {
+      const res = await api.get('/authors');
+      setAuthors(res.data);
+      setAuthorsLoaded(true);
+    } catch (error) {
+      console.error('Failed to refresh authors:', error);
+      throw error;
+    } finally {
+      setAuthorsLoading(false);
+    }
+  }, []);
+
   const value: AuthorsContextType = {
     authors,
     authorsLoading,
     fetchAuthors,
     addAuthor,
     deleteAuthor,
+    refreshAuthors,
   };
 
   return <AuthorsContext.Provider value={value}>{children}</AuthorsContext.Provider>;

@@ -5,8 +5,8 @@ import { useBooks } from '../context/BooksContext';
 import './Books.css';
 
 export default function Books() {
-  const { books, booksLoading, fetchBooks, addBook, deleteBook } = useBooks();
-  const { authors, fetchAuthors } = useAuthors();
+  const { books, booksLoading, fetchBooks, addBook, deleteBook, refreshBooks } = useBooks();
+  const { authors, fetchAuthors, refreshAuthors } = useAuthors();
 
   const [title, setTitle] = useState('');
   const [authorId, setAuthorId] = useState('');
@@ -17,6 +17,7 @@ export default function Books() {
       await addBook(title, Number(authorId));
       setTitle('');
       setAuthorId('');
+      window.dispatchEvent(new CustomEvent('booksChanged'));
     } catch (error) {
       alert('Failed to add book');
     }
@@ -26,6 +27,7 @@ export default function Books() {
     if (!window.confirm('Delete this book?')) return;
     try {
       await deleteBook(id);
+      window.dispatchEvent(new CustomEvent('booksChanged'));
     } catch (error) {
       alert('Failed to delete book');
     }
@@ -35,6 +37,25 @@ export default function Books() {
     fetchBooks();
     fetchAuthors();
   }, [fetchBooks, fetchAuthors]);
+
+  useEffect(() => {
+    const handleAuthorsChanged = () => {
+      refreshAuthors();
+      refreshBooks();
+    };
+
+    window.addEventListener('authorsChanged', handleAuthorsChanged);
+    return () => window.removeEventListener('authorsChanged', handleAuthorsChanged);
+  }, [refreshAuthors, refreshBooks]);
+
+  useEffect(() => {
+    const handleBooksChanged = () => {
+      refreshBooks();
+    };
+
+    window.addEventListener('booksChanged', handleBooksChanged);
+    return () => window.removeEventListener('booksChanged', handleBooksChanged);
+  }, [refreshBooks]);
 
   return (
     <AppLayout>

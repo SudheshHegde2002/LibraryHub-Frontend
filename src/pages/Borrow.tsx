@@ -7,42 +7,40 @@ import { useBorrow } from '../context/BorrowContext';
 import './Borrow.css';
 
 export default function Borrow() {
-  const { users, fetchUsers } = useUsers();
-  const { books, fetchBooks, updateBookBorrowStatus } = useBooks();
-  const { authors, fetchAuthors } = useAuthors();
-  const { borrowedBooks, borrowedLoading, fetchBorrowedBooks, borrowBook, returnBook } = useBorrow();
+  const { users, fetchUsers, refreshUsers } = useUsers();
+  const { books, fetchBooks, updateBookBorrowStatus, refreshBooks } = useBooks();
+  const { authors, fetchAuthors, refreshAuthors } = useAuthors();
+  const { borrowedBooks, borrowedLoading, fetchBorrowedBooks, borrowBook, returnBook, refreshBorrowedBooks } = useBorrow();
 
   const [userId, setUserId] = useState('');
   const [bookId, setBookId] = useState('');
 
-  // Helper to get author name by ID
   const getAuthorName = (authorId: number | string) => {
     if (!authorId) return 'Unknown';
     
-    // Try both string and number comparison
+
     const author = authors.find(a => 
       a.id === Number(authorId) || a.id.toString() === authorId.toString()
     );
     
-    // Debug logging
+
     console.log('Looking for author:', authorId, 'Found:', author, 'All authors:', authors);
     
     return author?.name || 'Unknown';
   };
 
-  // Filter available books (not borrowed)
   const availableBooks = useMemo(() => 
     books.filter(b => !b.is_borrowed), 
     [books]
   );
 
-  // Get borrowed books for selected user
+
   const userBorrowedBooks = useMemo(() => 
     userId ? (borrowedBooks[Number(userId)] || []) : [],
     [userId, borrowedBooks]
   );
 
-  // Debug: Log authors when they change
+
   useEffect(() => {
     console.log('Authors loaded:', authors.length, authors);
   }, [authors]);
@@ -54,6 +52,7 @@ export default function Borrow() {
         updateBookBorrowStatus(Number(bookId), true);
       });
       setBookId('');
+      window.dispatchEvent(new CustomEvent('booksChanged'));
     } catch (error) {
       alert('Failed to borrow book');
     }
@@ -65,6 +64,7 @@ export default function Borrow() {
       await returnBook(bookId, Number(userId), () => {
         updateBookBorrowStatus(bookId, false);
       });
+      window.dispatchEvent(new CustomEvent('booksChanged'));
     } catch (error) {
       alert('Failed to return book');
     }
@@ -81,6 +81,32 @@ export default function Borrow() {
       fetchBorrowedBooks(Number(userId));
     }
   }, [userId, fetchBorrowedBooks]);
+
+  useEffect(() => {
+    const handleBooksChanged = () => {
+      refreshBooks();
+      if (userId) {
+        refreshBorrowedBooks(Number(userId));
+      }
+    };
+    const handleAuthorsChanged = () => {
+      refreshAuthors();
+      if (userId) {
+        refreshBorrowedBooks(Number(userId));
+      }
+    };
+    const handleUsersChanged = () => refreshUsers();
+
+    window.addEventListener('booksChanged', handleBooksChanged);
+    window.addEventListener('authorsChanged', handleAuthorsChanged);
+    window.addEventListener('usersChanged', handleUsersChanged);
+
+    return () => {
+      window.removeEventListener('booksChanged', handleBooksChanged);
+      window.removeEventListener('authorsChanged', handleAuthorsChanged);
+      window.removeEventListener('usersChanged', handleUsersChanged);
+    };
+  }, [refreshBooks, refreshAuthors, refreshUsers, refreshBorrowedBooks, userId]);
 
   return (
     <AppLayout>
@@ -162,7 +188,7 @@ export default function Borrow() {
                   <tr key={b.id}>
                     <td>{b.Books?.title || 'Unknown'}</td>
                     <td>{b.Books?.author_id ? getAuthorName(b.Books.author_id) : 'Unknown'}</td>
-                    <td>{new Date(b.borrow_date).toLocaleDateString()}</td>
+                    <td>{new Date(b.borrowed_at).toLocaleDateString()}</td>
                     <td>
                       <button 
                         className="primary-btn return-btn" 

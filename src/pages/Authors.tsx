@@ -12,15 +12,19 @@ export default function Authors() {
     try {
       await addAuthor(name);
       setName("");
+      window.dispatchEvent(new CustomEvent('authorsChanged'));
     } catch (error) {
       alert("Failed to add author");
     }
   };
 
   const handleDeleteAuthor = async (id: number) => {
-    if (!window.confirm("Delete this author?")) return;
+    if (!window.confirm("Delete this author? This will also delete all their books.")) return;
     try {
       await deleteAuthor(id);
+      window.dispatchEvent(new CustomEvent('authorsChanged'));
+  
+      window.dispatchEvent(new CustomEvent('booksChanged'));
     } catch (error) {
       alert("Failed to delete author");
     }

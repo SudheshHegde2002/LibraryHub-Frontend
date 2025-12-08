@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import api from '../api';
 import { Author } from './AuthorsContext';
 
@@ -17,6 +17,7 @@ interface BooksContextType {
   addBook: (title: string, authorId: number) => Promise<void>;
   deleteBook: (id: number) => Promise<void>;
   updateBookBorrowStatus: (bookId: number, isBorrowed: boolean) => void;
+  refreshBooks: () => Promise<void>;
 }
 
 const BooksContext = createContext<BooksContextType | undefined>(undefined);
@@ -62,6 +63,32 @@ export const BooksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     ));
   }, []);
 
+  const refreshBooks = useCallback(async () => {
+    setBooksLoading(true);
+    try {
+      const res = await api.get('/books');
+      setBooks(res.data);
+      setBooksLoaded(true);
+    } catch (error) {
+      console.error('Failed to refresh books:', error);
+      throw error;
+    } finally {
+      setBooksLoading(false);
+    }
+  }, []);
+
+  // Listen for author changes and refresh books to update author names
+  useEffect(() => {
+    const handleAuthorsChanged = () => {
+      if (booksLoaded) {
+        refreshBooks();
+      }
+    };
+
+    window.addEventListener('authorsChanged', handleAuthorsChanged);
+    return () => window.removeEventListener('authorsChanged', handleAuthorsChanged);
+  }, [booksLoaded, refreshBooks]);
+
   const value: BooksContextType = {
     books,
     booksLoading,
@@ -69,6 +96,7 @@ export const BooksProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     addBook,
     deleteBook,
     updateBookBorrowStatus,
+    refreshBooks,
   };
 
   return <BooksContext.Provider value={value}>{children}</BooksContext.Provider>;

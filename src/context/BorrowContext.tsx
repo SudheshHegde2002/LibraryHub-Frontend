@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import api from '../api';
 
-// Book info from borrowed books API (doesn't include nested Authors)
 interface BorrowedBookInfo {
   id: number;
   title: string;
@@ -13,9 +12,8 @@ export interface BorrowedBook {
   id: number;
   user_id: number;
   book_id: number;
-  borrow_date: string;
-  borrowed_at?: any;
-  returned_at?: any;
+  borrowed_at: string;
+  returned_at?: string | null;
   Books?: BorrowedBookInfo;
 }
 
@@ -25,6 +23,7 @@ interface BorrowContextType {
   fetchBorrowedBooks: (userId: number) => Promise<void>;
   borrowBook: (userId: number, bookId: number, onSuccess?: () => void) => Promise<void>;
   returnBook: (bookId: number, userId: number, onSuccess?: () => void) => Promise<void>;
+  refreshBorrowedBooks: (userId: number) => Promise<void>;
 }
 
 const BorrowContext = createContext<BorrowContextType | undefined>(undefined);
@@ -79,12 +78,26 @@ export const BorrowProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (onSuccess) onSuccess();
   }, []);
 
+  const refreshBorrowedBooks = useCallback(async (userId: number) => {
+    setBorrowedLoading(true);
+    try {
+      const res = await api.get(`/borrow/user/${userId}`);
+      setBorrowedBooks(prev => ({ ...prev, [userId]: res.data }));
+    } catch (error) {
+      console.error('Failed to refresh borrowed books:', error);
+      throw error;
+    } finally {
+      setBorrowedLoading(false);
+    }
+  }, []);
+
   const value: BorrowContextType = {
     borrowedBooks,
     borrowedLoading,
     fetchBorrowedBooks,
     borrowBook,
     returnBook,
+    refreshBorrowedBooks,
   };
 
   return <BorrowContext.Provider value={value}>{children}</BorrowContext.Provider>;
